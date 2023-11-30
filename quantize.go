@@ -8,7 +8,10 @@ import (
 )
 
 // Quantize performs color quantization on the input image.
-func Quantize(input image.Image, numColors int) image.Image {
+// The input image should be an RGBA image.
+// The numColors parameter specifies the number of colors to quantize to.
+// The dither parameter specifies whether to apply dithering (Floyd-Steinberg).
+func Quantize(input image.Image, numColors int, dither bool) image.Image {
 	bounds := input.Bounds()
 	palette := make(color.Palette, numColors)
 
@@ -58,10 +61,12 @@ func Quantize(input image.Image, numColors int) image.Image {
 			}
 		}
 	}
-
-	// Create a new image with the quantized palette
 	output := image.NewPaletted(bounds, palette)
-	draw.Draw(output, bounds, input, image.Point{}, draw.Src)
+	if dither {
+		draw.FloydSteinberg.Draw(output, bounds, input, image.Point{})
+	} else {
+		draw.Draw(output, bounds, input, image.Point{}, draw.Src)
+	}
 	return ConvertPalettedToImage(output)
 }
 

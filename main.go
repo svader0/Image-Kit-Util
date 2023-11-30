@@ -6,6 +6,8 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"os"
+
+	"github.com/svader0/image-kit-util/pkg/transform"
 )
 
 func main() {
@@ -24,8 +26,10 @@ func main() {
 		return
 	}
 
-	outputImage := Crop(inputImage, 10, 10, 150, 150)
-	outputImage = Quantize(outputImage, 20)
+	// outputImage := transform.Crop(inputImage, 10, 10, 150, 150)
+	// outputImage = Quantize(outputImage, 20)
+	outputImage := transform.RotateImage(inputImage, 0.5)
+	outputImage = Quantize(outputImage, 15, true)
 
 	saveImage("output.png", outputImage)
 }
