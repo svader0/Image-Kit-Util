@@ -5,21 +5,33 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"math/rand"
 )
 
 // Quantize performs color quantization on the input image.
-// The input image should be an RGBA image.
 // The numColors parameter specifies the number of colors to quantize to.
-// The dither parameter specifies whether to apply dithering (Floyd-Steinberg).
+// The dither parameter specifies whether to apply Floyd-Steinberg dithering.
 func Quantize(input image.Image, numColors int, dither bool) image.Image {
 	bounds := input.Bounds()
-	palette := make(color.Palette, numColors)
+	palette := make(color.Palette, 0, numColors)
 
-	// Initialize the palette with the first q.NumColors colors from the image
-	for i := 0; i < numColors; i++ {
-		x := bounds.Min.X + i*(bounds.Max.X-bounds.Min.X)/numColors
-		y := bounds.Min.Y + (bounds.Max.Y-bounds.Min.Y)/2
-		palette[i] = input.At(x, y)
+	// Initialize the palette with unique colors from the image
+	colorSet := make(map[color.Color]bool)
+	for y := bounds.Min.Y; y < bounds.Max.Y && len(colorSet) < numColors; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X && len(colorSet) < numColors; x++ {
+			colorSet[input.At(x, y)] = true
+		}
+	}
+
+	// If there are fewer unique colors than numColors, add random colors to the palette
+	for len(colorSet) < numColors {
+		randomColor := color.RGBA{uint8(rand.Intn(256)), uint8(rand.Intn(256)), uint8(rand.Intn(256)), 255}
+		colorSet[randomColor] = true
+	}
+
+	// Convert the color set to a palette
+	for color := range colorSet {
+		palette = append(palette, color)
 	}
 
 	// Perform k-means clustering
@@ -67,11 +79,11 @@ func Quantize(input image.Image, numColors int, dither bool) image.Image {
 	} else {
 		draw.Draw(output, bounds, input, image.Point{}, draw.Src)
 	}
-	return ConvertPalettedToImage(output)
+	return convertPalettedToImage(output)
 }
 
 // ConvertPalettedToImage converts a paletted image to a regular image.Image.
-func ConvertPalettedToImage(paletted *image.Paletted) image.Image {
+func convertPalettedToImage(paletted *image.Paletted) image.Image {
 	bounds := paletted.Bounds()
 	rgba := image.NewRGBA(bounds)
 

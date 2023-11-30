@@ -5,17 +5,22 @@ import (
 	"math"
 )
 
-func RotateImage(input image.Image, angle float64) image.Image {
-	bounds := input.Bounds()
+// Rotates the input image by the specified angle in degrees.
+func RotateDegrees(input image.Image, angle float64) image.Image {
+	return Rotate(input, angle*math.Pi/180)
+}
 
-	// Create a new RGBA image to hold the rotated image
+// Rotates the input image by the specified angle in radians.
+func Rotate(input image.Image, angle float64) image.Image {
+	bounds := input.Bounds()
 	rotated := image.NewRGBA(bounds)
 
 	// Calculate the rotation matrix
+	// See: https://en.wikipedia.org/wiki/Rotation_matrix
 	cosTheta := math.Cos(angle)
 	sinTheta := math.Sin(angle)
 
-	// Calculate the center of the original image
+	// Find the image center point
 	centerX, centerY := float64(bounds.Max.X-bounds.Min.X)/2, float64(bounds.Max.Y-bounds.Min.Y)/2
 
 	// Apply the rotation to each pixel in the original image
@@ -36,7 +41,9 @@ func RotateImage(input image.Image, angle float64) image.Image {
 			// Round the new coordinates to the nearest integer
 			newXInt, newYInt := int(math.Round(newX)), int(math.Round(newY))
 
-			// Check if the new coordinates are within the bounds of the rotated image
+			// If the new coordinates are within the bounds of the rotated image
+			// then set the pixel at the new coordinates to the pixel from the
+			// original image.
 			if newXInt >= 0 && newXInt < rotated.Bounds().Dx() && newYInt >= 0 && newYInt < rotated.Bounds().Dy() {
 				rotated.Set(x, y, input.At(newXInt, newYInt))
 			}

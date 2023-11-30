@@ -1,35 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"image"
+	"image/color"
 	_ "image/jpeg"
 	"image/png"
 	"os"
-
-	"github.com/svader0/image-kit-util/pkg/transform"
+	"sort"
 )
 
 func main() {
-	// Open the input image file
-	inputFile, err := os.Open("input.png")
-	if err != nil {
-		fmt.Println("Error opening input file:", err)
-		return
-	}
-	defer inputFile.Close()
-
-	// Decode the input image
-	inputImage, _, err := image.Decode(inputFile)
-	if err != nil {
-		fmt.Println("Error decoding input image:", err)
-		return
-	}
+	inputImage, _ := loadImage("input2.png")
 
 	// outputImage := transform.Crop(inputImage, 10, 10, 150, 150)
 	// outputImage = Quantize(outputImage, 20)
-	outputImage := transform.RotateImage(inputImage, 0.5)
-	outputImage = Quantize(outputImage, 15, true)
+	// outputImage := transform.RotateDegrees(inputImage, -45)
+	// outputImage := Quantize(inputImage, 5, true)
+	outputImage := sortPixels(inputImage)
 
 	saveImage("output.png", outputImage)
 }
@@ -62,6 +49,37 @@ func convertToGray(input image.Image) *image.Gray {
 	}
 
 	return gray
+}
+
+func sortPixels(input image.Image) image.Image {
+	bounds := input.Bounds()
+	newImg := image.NewRGBA(bounds)
+	pixelList := make([]color.Color, 0)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			pixelList = append(pixelList, input.At(x, y))
+		}
+	}
+
+	// sort all the pixels by their average color
+	sort.Slice(pixelList, func(i, j int) bool {
+		return averageRGBA(pixelList[i]) < averageRGBA(pixelList[j])
+	})
+
+	// draw the pixels in order
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			newImg.Set(x, y, pixelList[y*bounds.Dx()+x])
+		}
+	}
+
+	return newImg
+}
+
+func averageRGBA(color color.Color) uint8 {
+	r, g, b, _ := color.RGBA()
+	return uint8((float64(r) + float64(g) + float64(b)) / 3)
 }
 
 // saveImage saves an image to file
