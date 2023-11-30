@@ -1,30 +1,33 @@
 package main
 
 import (
+	"fmt"
 	"image"
+	_ "image/jpeg"
 	"image/png"
 	"os"
 )
 
 func main() {
-	// Load the input image
-	inputImage, err := loadImage("input3.png")
+	// Open the input image file
+	inputFile, err := os.Open("input.png")
 	if err != nil {
-		panic(err)
+		fmt.Println("Error opening input file:", err)
+		return
+	}
+	defer inputFile.Close()
+
+	// Decode the input image
+	inputImage, _, err := image.Decode(inputFile)
+	if err != nil {
+		fmt.Println("Error decoding input image:", err)
+		return
 	}
 
-	// Convert the input image to grayscale
-	// grayImage := convertToGray(inputImage)
+	outputImage := Crop(inputImage, 10, 10, 150, 150)
+	outputImage = Quantize(outputImage, 20)
 
-	// Apply Floyd-Steinberg dithering
-	// ditheredImage := floydSteinbergDithering(grayImage)
-	quantizedImage := QuantizeImage(inputImage, 8)
-
-	// Save the dithered image
-	err = saveImage("output.png", quantizedImage)
-	if err != nil {
-		panic(err)
-	}
+	saveImage("output.png", outputImage)
 }
 
 // loadImage loads an image from file
