@@ -5,15 +5,16 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
-	"math/rand"
 )
+
+// FOR COLOR IMAGES -------------------------------------------------
 
 // Quantize performs color quantization on the input image.
 // The numColors parameter specifies the number of colors to quantize to.
 // The dither parameter specifies whether to apply Floyd-Steinberg dithering.
 func Quantize(input image.Image, numColors int, dither bool) image.Image {
-	bounds := input.Bounds()
 	palette := make(color.Palette, 0, numColors)
+	bounds := input.Bounds()
 
 	// Initialize the palette with unique colors from the image
 	colorSet := make(map[color.Color]bool)
@@ -23,19 +24,13 @@ func Quantize(input image.Image, numColors int, dither bool) image.Image {
 		}
 	}
 
-	// If there are fewer unique colors than numColors, add random colors to the palette
-	for len(colorSet) < numColors {
-		randomColor := color.RGBA{uint8(rand.Intn(256)), uint8(rand.Intn(256)), uint8(rand.Intn(256)), 255}
-		colorSet[randomColor] = true
-	}
-
 	// Convert the color set to a palette
 	for color := range colorSet {
 		palette = append(palette, color)
 	}
 
 	// Perform k-means clustering
-	for iter := 0; iter < 55; iter++ {
+	for iter := 0; iter < 25; iter++ {
 		// Assign each pixel to the nearest color in the palette
 		assignments := make([]int, numColors)
 
