@@ -19,6 +19,9 @@ jobs:
       - name: Test
         run: go test -v ./...
 
+      - name: Clean
+        run: make clean
+
       - name: Lint
         uses: DefectDojo-Inc/lint-action@master
         with:
