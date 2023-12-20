@@ -1,14 +1,13 @@
-# image-kit-util (WORK IN PROGRESS)
+# Image-Kit-Util (WIP)
 
 Image-Kit-Util provides a simple and clean interface for image manipulation in Go. Perfect for generative art and automated image manipulation scripts.
 
 ### Supported operations:
 - Crop
-- Resize
 - Rotate
 - Translate
 - Sort pixels by hue
-- Quantize (w/ Floyd-Steinberg Dithering)
+- Quantize
 - Greyscale conversion
 - Split/Combine images
 
@@ -18,27 +17,29 @@ Image-Kit-Util provides a simple and clean interface for image manipulation in G
 package main
 
 import (
-	"github.com/svader0/image-kit-util/pkg/transform"
+    "github.com/svader0/Image-Kit-Util"
 )
 
 func main() {
-    // First, load our image from the local directory.
-	inputImage, err := loadImage("./input.jpg")
-    if err != nil {
-        panic("Could not load image!")
-    }
-
-    // Split our image into 9 smaller images
-	images := SplitImage(outputImage, 3, 3)
-	for i, image := range images {
-        // Quantize all our images with dithering enabled
-		images[i] = Quantize(image, 15, true)
+	img, err := LoadImage("test_image.jpg")
+	if err != nil {
+		panic(err)
 	}
-    // Recombine the 9 small images into a single image.
-	outputImage = CombineImages(images, 3, 3)
 
-    // Save our output as a .png file.
-	saveImage("output.png", outputImage)
+	// Rotate the image by 45 degrees
+	img = RotateDegrees(img, 45)
+
+	// Crop the image to a square
+	img = Crop(img, 0, 0, 500, 500)
+
+	// Convert the image to grayscale
+	img = ConvertToGray(img)
+
+	// Save the image
+	err = SaveImage("out.jpg", img)
+	if err != nil {
+		panic(err)
+	}
 }
 
 ```
@@ -46,7 +47,6 @@ func main() {
 ## TODO / Needs Work
 
 - Current quantize and pixelsort algorithms are SLOW! Images over 1000x1000 take significant time to render.
-- Functions aren't organized. Working on this.
 - New features to add soon:
     - Drawing shapes, lines, text, etc. on image.
     - Support for image overlays
