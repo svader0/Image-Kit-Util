@@ -3,6 +3,8 @@ package main
 import (
 	"image"
 	"image/color"
+	_ "image/gif"
+	_ "image/jpeg"
 	"image/png"
 	"math"
 	"os"
@@ -11,6 +13,7 @@ import (
 // Color constants
 var COLOR = struct {
 	RED         color.RGBA
+	BLUE        color.RGBA
 	BLACK       color.RGBA
 	WHITE       color.RGBA
 	YELLOW      color.RGBA
@@ -21,6 +24,7 @@ var COLOR = struct {
 	TRANSPARENT color.RGBA
 }{
 	RED:         color.RGBA{255, 0, 0, 255},
+	BLUE:        color.RGBA{0, 0, 255, 255},
 	BLACK:       color.RGBA{0, 0, 0, 255},
 	WHITE:       color.RGBA{255, 255, 255, 255},
 	YELLOW:      color.RGBA{255, 255, 0, 255},
@@ -31,7 +35,7 @@ var COLOR = struct {
 	TRANSPARENT: color.RGBA{0, 0, 0, 0},
 }
 
-// RGBToHSL converts RGB values to HSL.
+// Converts RGB values to HSL.
 func RGBToHSL(r, g, b uint8) (float64, float64, float64) {
 	rF, gF, bF := float64(r)/255.0, float64(g)/255.0, float64(b)/255.0
 
@@ -45,7 +49,10 @@ func RGBToHSL(r, g, b uint8) (float64, float64, float64) {
 	if delta == 0 {
 		h = 0
 	} else if max == rF {
-		h = 60 * math.Mod(((gF-bF)/delta), 6)
+		h = 60 * math.Mod(((gF-bF)/delta)+6, 6)
+		if h < 0 {
+			h += 360
+		}
 	} else if max == gF {
 		h = 60 * (((bF - rF) / delta) + 2)
 	} else {
@@ -62,13 +69,13 @@ func RGBToHSL(r, g, b uint8) (float64, float64, float64) {
 		s = delta / (1 - math.Abs(2*l-1))
 	}
 
-	return math.Mod(h+360, 360), s, l
+	return h, s, l
 }
 
 // Finds the average of the RGB values of a color
-func averageRGBA(color color.Color) uint8 {
+func AverageRGBA(color color.Color) uint8 {
 	r, g, b, _ := color.RGBA()
-	return uint8((float64(r) + float64(g) + float64(b)) / 3)
+	return uint8((uint32(r) + uint32(g) + uint32(b)) / 3)
 }
 
 // Converts an image to grayscale
@@ -78,15 +85,17 @@ func ConvertToGray(input image.Image) *image.Gray {
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			gray.Set(x, y, input.At(x, y))
+			oldColor := input.At(x, y)
+			grayColor := color.GrayModel.Convert(oldColor)
+			gray.Set(x, y, grayColor)
 		}
 	}
 
 	return gray
 }
 
-// loadImage loads an image from file
-func loadImage(filename string) (image.Image, error) {
+// Loads an image from file
+func LoadImage(filename string) (image.Image, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -111,8 +120,8 @@ func createImage(x, y int, color color.RGBA) image.Image {
 	return img
 }
 
-// saveImage saves an image to file
-func saveImage(filename string, img image.Image) error {
+// Saves an image to file
+func SaveImage(filename string, img image.Image) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -127,8 +136,27 @@ func saveImage(filename string, img image.Image) error {
 	return nil
 }
 
-// Splits the image into a grid of smaller images
-func SplitImage(img image.Image, x, y int) []image.Image {
+// Represents a group of subimages that can be combined into a single image
+// The subimages are arranged in a grid of size x by y.
+type Subimages struct {
+	Images []image.Image
+	x      int
+	y      int
+}
+
+// X returns the x value.
+func (s *Subimages) X() int {
+	return s.x
+}
+
+// Y returns the y value.
+func (s *Subimages) Y() int {
+	return s.y
+}
+
+// Splits the image into a grid of smaller images.
+// Returns a Subimages struct containing the smaller images and the arrangement of the grid. (x by y)
+func SplitImage(img image.Image, x, y int) Subimages {
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
 
@@ -141,36 +169,29 @@ func SplitImage(img image.Image, x, y int) []image.Image {
 	// Create a new image for each sub-image
 	for i := 0; i < x; i++ {
 		for j := 0; j < y; j++ {
-			subImage := image.NewRGBA(image.Rect(0, 0, subWidth, subHeight))
-			for k := 0; k < subWidth; k++ {
-				for l := 0; l < subHeight; l++ {
-					subImage.Set(k, l, img.At(i*subWidth+k, j*subHeight+l))
-				}
-			}
+			subImage := img.(interface {
+				SubImage(r image.Rectangle) image.Image
+			}).SubImage(image.Rect(i*subWidth, j*subHeight, (i+1)*subWidth, (j+1)*subHeight))
 			images = append(images, subImage)
 		}
 	}
 
-	return images
+	return Subimages{images, x, y}
 }
 
-// Takes in a slice of subimages and combines them into a single image
-// The subimages are arranged in a grid of size x by y.
-// This is meant to be used with the output of SplitImage, but it can be used with any slice of images.
-func CombineImages(images []image.Image, x, y int) image.Image {
-	bounds := images[0].Bounds()
+// Takes in a subimages struct and combines them into a single image
+func CombineImages(imgs *Subimages) image.Image {
+	bounds := imgs.Images[0].Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
 
-	// Create a new image for the combined image
-	combinedImage := image.NewRGBA(image.Rect(0, 0, width*x, height*y))
+	// Create a new image for the result
+	combinedImage := image.NewRGBA(image.Rect(0, 0, width*imgs.X(), height*imgs.Y()))
 
 	// Combine the images
-	for i := 0; i < x; i++ {
-		for j := 0; j < y; j++ {
-			for k := 0; k < width; k++ {
-				for l := 0; l < height; l++ {
-					combinedImage.Set(i*width+k, j*height+l, images[i*x+j].At(k, l))
-				}
+	for i, img := range imgs.Images {
+		for x := 0; x < width; x++ {
+			for y := 0; y < height; y++ {
+				combinedImage.Set(i*width+x, i/width*height+y, img.At(x, y))
 			}
 		}
 	}
