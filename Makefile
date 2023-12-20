@@ -3,7 +3,7 @@ name := image-kit-util
 .PHONY: build run clean test
 
 build:
-	go build -o bin/$(name) main.go utility.go quantize.go fun.go
+	go build -o bin/$(name) main.go utility.go quantize.go fun.go translate.go
 
 run: build
 	./bin/$(name)
