@@ -17,5 +17,7 @@
 # Go workspace file
 go.work
 
-/res/output.*
-/bin
+/res/*
+!/res/test_image.jpg
+!/res/test_output.jpg
+/bin/

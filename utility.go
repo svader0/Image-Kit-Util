@@ -198,3 +198,24 @@ func CombineImages(imgs *Subimages) image.Image {
 
 	return combinedImage
 }
+
+func AverageColor(img *image.Image) color.RGBA {
+	bounds := (*img).Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+
+	var r, g, b uint32
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			rTemp, gTemp, bTemp, _ := (*img).At(x, y).RGBA()
+			r += rTemp
+			g += gTemp
+			b += bTemp
+		}
+	}
+
+	r /= uint32(width * height)
+	g /= uint32(width * height)
+	b /= uint32(width * height)
+
+	return color.RGBA{uint8(r), uint8(g), uint8(b), 255}
+}

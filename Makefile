@@ -10,9 +10,8 @@ run: build
 
 clean:
 	go clean
-	if exists bin\$(name) del bin\$(name)
-	if exists bin\$(name).exe del bin\$(name).exe
-	if exists bin del bin
+	if [ -f bin/$(name) ] ; then rm -f -r bin/$(name) ; fi
+	find /path/to/folder -type f ! \( -name 'test_image.jpg' -o -name 'test_output.jpg' \) -exec rm {} +
 
 test: build
 	go test 
