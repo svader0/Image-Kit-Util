@@ -1,4 +1,4 @@
-module github.com/svader0/Image_Kit_Util
+module github.com/svader0/Image-Kit-Util
 
 go 1.21.1
 
