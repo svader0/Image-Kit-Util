@@ -1,6 +1,8 @@
-# Image-Kit-Util (WIP)
+# Image-Kit-Util
 
 Image-Kit-Util provides a simple and clean interface for image manipulation in Go. Perfect for generative art and automated image manipulation scripts.
+
+For documentation, refer to [pkg.go.dev](https://pkg.go.dev/github.com/svader0/Image-Kit-Util#AddBorder)
 
 ### Supported operations:
 - Crop
