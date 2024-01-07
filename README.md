@@ -10,6 +10,7 @@ Image-Kit-Util provides a simple and clean interface for image manipulation in G
 - Quantize
 - Greyscale conversion
 - Split/Combine images
+- Add colored border
 
 ## Example
 
